@@ -1,0 +1,177 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_PRODUTOS 10
+
+typedef struct {
+    int codigo;
+    char nome[30];
+    float preco;
+} Produto;
+
+void carregarProdutos(Produto produtos[], int *total) {
+    FILE *file = fopen("produtos.txt", "r");
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+
+    *total = 0;
+    while (fscanf(file, "%d %s %f", &produtos[*total].codigo, produtos[*total].nome, &produtos[*total].preco) != EOF) {
+        (*total)++;
+    }
+
+    fclose(file);
+}
+
+void listarProdutos(Produto produtos[], int total) {
+    printf("Lista de Produtos:\n");
+    for (int i = 0; i < total; i++) {
+        printf("Código: %d, Nome: %s, Preço: %.2f\n", produtos[i].codigo, produtos[i].nome, produtos[i].preco);
+    }
+}
+
+int codigoExistente(Produto produtos[], int total, int codigo) {
+    for (int i = 0; i < total; i++) {
+        if (produtos[i].codigo == codigo) {
+            return 1; // Código já existe
+        }
+    }
+    return 0; // Código não existe
+}
+
+void adicionarProduto(Produto produtos[], int *total) {
+    if (*total >= MAX_PRODUTOS) {
+        printf("Limite de produtos atingido!\n");
+        return;
+    }
+
+    int codigo;
+    printf("Digite o código do produto: ");
+    scanf("%d", &codigo);
+    
+    if (codigoExistente(produtos, *total, codigo)) {
+        printf("Erro: Código de produto já existe!\n");
+        return;
+    }
+
+    produtos[*total].codigo = codigo;
+    
+    printf("Digite o nome do produto: ");
+    scanf("%s", produtos[*total].nome);
+    
+    printf("Digite o preço do produto: ");
+    while (1) {
+        if (scanf("%f", &produtos[*total].preco) == 1 && produtos[*total].preco >= 0) {
+            break;
+        } else {
+            printf("Preço inválido! Tente novamente: ");
+            while (getchar() != '\n'); // Limpar buffer
+        }
+    }
+
+    (*total)++;
+}
+
+void editarProduto(Produto produtos[], int total) {
+    int codigo;
+    printf("Digite o código do produto a ser editado: ");
+    scanf("%d", &codigo);
+
+    for (int i = 0; i < total; i++) {
+        if (produtos[i].codigo == codigo) {
+            printf("Novo nome do produto: ");
+            scanf("%s", produtos[i].nome);
+            printf("Novo preço do produto: ");
+            while (1) {
+                if (scanf("%f", &produtos[i].preco) == 1 && produtos[i].preco >= 0) {
+                    break;
+                } else {
+                    printf("Preço inválido! Tente novamente: ");
+                    while (getchar() != '\n'); // Limpar buffer
+                }
+            }
+            printf("Produto editado com sucesso!\n");
+            return;
+        }
+    }
+    printf("Produto não encontrado!\n");
+}
+
+void removerProduto(Produto produtos[], int *total) {
+    int codigo;
+    printf("Digite o código do produto a ser removido: ");
+    scanf("%d", &codigo);
+
+    for (int i = 0; i < *total; i++) {
+        if (produtos[i].codigo == codigo) {
+            for (int j = i; j < *total - 1; j++) {
+                produtos[j] = produtos[j + 1]; // Deslocar produtos
+            }
+            (*total)--;
+            printf("Produto removido com sucesso!\n");
+            return;
+        }
+    }
+    printf("Produto não encontrado!\n");
+}
+
+void salvarProdutos(Produto produtos[], int total) {
+    FILE *file = fopen("produtos.txt", "w");
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+
+    for (int i = 0; i < total; i++) {
+        fprintf(file, "%d %s %.2f\n", produtos[i].codigo, produtos[i].nome, produtos[i].preco);
+    }
+
+    fclose(file);
+}
+
+int main() {
+    Produto produtos[MAX_PRODUTOS];
+    int totalProdutos = 0;
+    int opcao;
+
+    carregarProdutos(produtos, &totalProdutos);
+
+    do {
+        printf("\nSistema de Mercado\n");
+        printf("1. Listar Produtos\n");
+        printf("2. Adicionar Produto\n");
+        printf("3. Editar Produto\n");
+        printf("4. Remover Produto\n");
+        printf("5. Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                listarProdutos(produtos, totalProdutos);
+                break;
+            case 2:
+                adicionarProduto(produtos, &totalProdutos);
+                salvarProdutos(produtos, totalProdutos);
+                break;
+            case 3:
+                editarProduto(produtos, totalProdutos);
+                salvarProdutos(produtos, totalProdutos);
+                break;
+            case 4:
+                removerProduto(produtos, &totalProdutos);
+                salvarProdutos(produtos, totalProdutos);
+                break;
+            case 5:
+                printf("Saindo...\n");
+                break;
+            default:
+                printf("Opção inválida!\n");
+        }
+    } while (opcao != 5);
+
+    return 0;
+}
